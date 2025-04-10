@@ -64,7 +64,7 @@ arimaRecFore = reconstruct_fore(logdiffdata, logdata, arimaFore, m)
 
 # Sarima model
 model = pm.auto_arima(train, start_p=1, start_q=1,
-test='adf', max_p=3, max_q=3, m=4,
+test='adf', max_p=3, max_q=3, m=m,
 start_P=0, seasonal=True,
 d=None, D=1, trace=True,
 error_action='ignore',
@@ -75,7 +75,21 @@ morder = model.order # p,d,q
 mseasorder = model.seasonal_order # P,D,Q,m
 fitted = model.fit(train)
 sarimaFore = fitted.predict(n_periods=12) # forecast
+print(morder)
 # sarimaPred = fitted.predict_in_sample()
+
+# HWES model
+
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+# fit model
+model = ExponentialSmoothing(train, seasonal_periods=m,trend="add",
+seasonal ="add",
+damped_trend = True,
+use_boxcox = True,
+initialization_method = "estimated")
+hwfit = model.fit()
+# make forecast
+hwesfore = hwfit.predict(len(train), len(train)+m)
 
 
 
@@ -85,6 +99,7 @@ plt.plot(rawdata[:-12], label="train")
 plt.plot(range(len(rawdata)-12,len(rawdata)),armaRecFore,label="arma prediction")
 plt.plot(range(len(rawdata)-12,len(rawdata)),arimaRecFore,label="arima prediction")
 plt.plot(range(len(train), len(train) + len(sarimaFore)), sarimaFore,label="sarima prediction")
+plt.plot(range(len(train), len(train) + len(hwesfore)), hwesfore,label="hwes prediction")
 plt.plot(range(len(rawdata)-12,len(rawdata)),rawdata[-12:], label="test")
 plt.title("M3 series"),plt.xlabel("time"),plt.ylabel("value")
 plt.legend()
